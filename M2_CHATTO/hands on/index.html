@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Currency Exchange Rates</title>
+  <style>
+    /* Global Styles */
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(45deg, #2c3e50, #3498db); /* Stylish background gradient */
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Flags on the Sidelines */
+    body::before,
+    body::after {
+      content: ''; 
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 150px; /* Width of the flag */
+      height: 90px; /* Height of the flag */
+      background-size: cover; /* Make the flag images cover the whole element */
+      background-position: center;
+      opacity: 0.3;
+      z-index: -1;
+    }
+
+    /* Left Flag - Philippine Flag */
+    body::before {
+      left: 10px; /* Position on the left side */
+      background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Flag_of_the_Philippines.svg/1024px-Flag_of_the_Philippines.svg.png');
+    }
+
+    /* Right Flag - Philippine Flag */
+    body::after {
+      right: 10px; /* Position on the right side */
+      background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Flag_of_the_Philippines.svg/1024px-Flag_of_the_Philippines.svg.png');
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.9); /* Slightly transparent white background */
+      border-radius: 12px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15); /* Subtle shadow for depth */
+      padding: 40px;
+      width: 100%;
+      max-width: 600px;
+      backdrop-filter: blur(10px); /* Glassmorphism effect */
+      z-index: 1; /* Ensure it sits above the flags */
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      font-size: 2.5em;
+      margin-bottom: 30px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      margin-top: 5px;
+      box-sizing: border-box;
+      background-color: #f9f9f9;
+      transition: all 0.3s ease;
+    }
+
+    select:focus, input:focus {
+      border-color: #3498db; /* Highlight border color on focus */
+      outline: none;
+      box-shadow: 0 0 10px rgba(52, 152, 219, 0.5); /* Focus effect */
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      background-color: #3498db;
+      color: #fff;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background-color: #2980b9; /* Darker blue on hover */
+    }
+
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #1e2a3a;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 18px;
+      color: #fff;
+      font-weight: bold;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .error {
+      color: #e74c3c;
+      font-weight: normal;
+    }
+
+    /* Responsive Design */
+    @media screen and (max-width: 480px) {
+      .container {
+        padding: 25px;
+      }
+
+      h1 {
+        font-size: 2em;
+      }
+      
+      select, input, button {
+        padding: 12px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Currency Exchange</h1>
+
+    <div class="form-group">
+      <label for="currencyFrom">From Currency:</label>
+      <select id="currencyFrom">
+        <!-- Options will be populated dynamically -->
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="currencyTo">To Currency:</label>
+      <select id="currencyTo">
+        <!-- Options will be populated dynamically -->
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="amount">Amount:</label>
+      <input type="number" id="amount" value="1" min="1">
+    </div>
+
+    <button onclick="getCurrencyRate()">Convert</button>
+
+    <div id="currencyResult" class="result"></div>
+  </div>
+
+  <script>
+    const exchangeApiKey = '909f491706a116d61b199a2e'; // Your API key
+    const currencyFromSelect = document.getElementById('currencyFrom');
+    const currencyToSelect = document.getElementById('currencyTo');
+
+    // Fetch the list of all supported currencies
+    fetch(`https://v6.exchangerate-api.com/v6/${exchangeApiKey}/codes`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.supported_codes) {
+          const currencies = data.supported_codes;
+
+          // Populate both "From" and "To" dropdowns
+          currencies.forEach(([code, name]) => {
+            const optionFrom = document.createElement('option');
+            optionFrom.value = code;
+            optionFrom.textContent = `${code} - ${name}`;
+            currencyFromSelect.appendChild(optionFrom);
+
+            const optionTo = document.createElement('option');
+            optionTo.value = code;
+            optionTo.textContent = `${code} - ${name}`;
+            currencyToSelect.appendChild(optionTo);
+          });
+        } else {
+          alert('Error fetching currency codes');
+        }
+      })
+      .catch(error => alert('Failed to load currency codes'));
+
+    function getCurrencyRate() {
+      const fromCurrency = document.getElementById('currencyFrom').value;
+      const toCurrency = document.getElementById('currencyTo').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+
+      fetch(`https://v6.exchangerate-api.com/v6/${exchangeApiKey}/latest/${fromCurrency}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.conversion_rates[toCurrency]) {
+            const rate = data.conversion_rates[toCurrency];
+            const convertedAmount = (amount * rate).toFixed(2);
+            document.getElementById('currencyResult').innerHTML = `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`;
+          } else {
+            document.getElementById('currencyResult').innerHTML = `<span class="error">Invalid currency code entered</span>`;
+          }
+        })
+        .catch(error => {
+          document.getElementById('currencyResult').innerHTML = `<span class="error">Error fetching currency data</span>`;
+        });
+    }
+  </script>
+
+</body>
+</html>
